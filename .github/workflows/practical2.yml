@@ -2,9 +2,11 @@ name: Practical 2 CI
 
 on:
   push:
-    branches: ["main"]
+    paths:
+      - "practical1/**"
   pull_request:
-    branches: ["main"]
+    paths:
+      - "practical1/**"
 
 jobs:
   build:
