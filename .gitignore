@@ -1,5 +1,5 @@
 # Node.js
-node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -13,7 +13,7 @@ pids/
 *.pid.lock
 
 # Dependency directories
-node_modules/
+**/node_modules/
 jspm_packages/
 
 # Optional npm cache directory
