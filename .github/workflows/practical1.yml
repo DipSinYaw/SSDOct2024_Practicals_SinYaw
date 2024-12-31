@@ -1,4 +1,4 @@
-name: Practical2 CI
+name: Practical 1 CI
 
 on:
   push:
