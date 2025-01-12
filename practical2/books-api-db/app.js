@@ -1,14 +1,14 @@
 const express = require("express");
 const booksController = require("./controllers/booksController");
+const usersController = require("./controllers/usersController");
 const sql = require("mssql");
 const dbConfig = require("./dbConfig");
 const bodyParser = require("body-parser"); // Import body-parser
 const validateBook = require("./middlewares/validateBook");
+const staticMiddleware = express.static("public");
 
 const app = express();
 const port = 3000;
-
-const staticMiddleware = express.static("public");
 
 // Include body-parser middleware to handle JSON data
 app.use(bodyParser.json());
@@ -16,9 +16,17 @@ app.use(bodyParser.urlencoded({ extended: true })); // For form data handling
 
 app.use(staticMiddleware); // Mount the static middleware
 
+app.get("/users/search", usersController.searchUsers);
+app.post("/users", usersController.createUser); // Create user
+app.get("/users", usersController.getAllUsers); // Get all users
+app.get("/users/with-books", usersController.getUsersWithBooks);
+app.get("/users/:id", usersController.getUserById); // Get user by ID
+app.put("/users/:id", usersController.updateUser); // Update user
+app.delete("/users/:id", usersController.deleteUser); // Delete user
+
 app.get("/books", booksController.getAllBooks);
-app.get("/books/:id", booksController.getBookById);
 app.post("/books", validateBook, booksController.createBook); // POST for creating books (can handle JSON data)
+app.get("/books/:id", booksController.getBookById);
 app.put("/books/:id", validateBook, booksController.updateBook);
 app.delete("/books/:id", booksController.deleteBook); // DELETE for deleting books
 

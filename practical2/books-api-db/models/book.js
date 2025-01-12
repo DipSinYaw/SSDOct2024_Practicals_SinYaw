@@ -45,7 +45,6 @@ class Book {
       : null; // Handle book not found
   }
 
-
   static async createBook(newBookData) {
     const connection = await sql.connect(dbConfig);
 
@@ -62,8 +61,6 @@ class Book {
     // Retrieve the newly created book using its ID
     return this.getBookById(result.recordset[0].id);
   }
-
-  
 
   static async updateBook(id, newBookData) {
     const connection = await sql.connect(dbConfig);
