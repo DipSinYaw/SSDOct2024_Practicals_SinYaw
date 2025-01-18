@@ -1,10 +1,13 @@
 const User = require("../models/user");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const e = require("express");
 
 const createUser = async (req, res) => {
   const newUser = req.body;
   try {
-    const createdBook = await User.createUser(newUser);
-    res.status(201).json(createdBook);
+    const createdUser = await User.createUser(newUser);
+    res.status(201).json(createdUser);
   } catch (error) {
     console.error(error);
     res.status(500).send("Error creating book");
@@ -22,13 +25,13 @@ const getAllUsers = async (req, res) => {
 };
 
 const getUserById = async (req, res) => {
-  const bookId = parseInt(req.params.id);
+  const userId = parseInt(req.params.id);
   try {
-    const book = await User.getUserById(bookId);
-    if (!book) {
+    const user = await User.getUserById(userId);
+    if (!user) {
       return res.status(404).send("User not found");
     }
-    res.json(book);
+    res.json(user);
   } catch (error) {
     console.error(error);
     res.status(500).send("Error retrieving user");
@@ -67,10 +70,9 @@ const deleteUser = async (req, res) => {
 };
 
 const searchUsers = async (req, res) => {
-  console.log("check now in: ");
   // async function searchUsers(req, res) {
   const searchTerm = req.query.searchTerm; // Extract search term from query params
-  console.log("check: " + searchTerm);
+
   try {
     const users = await User.searchUsers(searchTerm);
     res.json(users);
@@ -90,6 +92,70 @@ async function getUsersWithBooks(req, res) {
   }
 }
 
+async function registerUser(req, res) {
+  const { username, email, password, role } = req.body;
+
+  console.log("registerUser: ", username, password, role);
+
+  try {
+    const existingUser = await User.getCountByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const newUser = {
+      username,
+      email,
+      passwordHash: hashedPassword,
+      role,
+    };
+    const createdUser = await User.createUser(newUser);
+    res.status(201).json(createdUser);
+
+    return res.status(201).json({ message: "User created successfully" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+async function login(req, res) {
+  const { username, password } = req.body;
+
+  const salt = await bcrypt.genSalt(10);
+  console.log("login: ", username, password, salt);
+
+  try {
+    // Validate user credentials
+    const existingUser = await User.getCountByUsername(username);
+    if (!existingUser) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Compare password with hash
+    const isMatch = await bcrypt.compare(password, existingUser.passwordHash);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Generate JWT token
+    const payload = {
+      id: existingUser.id,
+      role: existingUser.role,
+    };
+    const token = jwt.sign(payload, "your_secret_key", { expiresIn: "3600s" }); // Expires in 1 hour
+
+    return res.status(200).json({ token });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 module.exports = {
   createUser,
   getAllUsers,
@@ -98,4 +164,6 @@ module.exports = {
   deleteUser,
   searchUsers,
   getUsersWithBooks,
+  registerUser,
+  login,
 };

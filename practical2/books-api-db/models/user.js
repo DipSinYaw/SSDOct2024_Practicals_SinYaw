@@ -2,20 +2,24 @@ const sql = require("mssql");
 const dbConfig = require("../dbConfig");
 
 class User {
-  constructor(id, username, email) {
+  constructor(id, username, email, passwordHash, role = "member") {
     this.id = id;
     this.username = username;
     this.email = email;
+    this.passwordHash = passwordHash;
+    this.role = role;
   }
 
   static async createUser(user) {
     const connection = await sql.connect(dbConfig);
 
-    const sqlQuery = `INSERT INTO Users (username, email) VALUES (@username, @email); SELECT SCOPE_IDENTITY() AS id;`;
+    const sqlQuery = `INSERT INTO Users (username, email, passwordHash, role) VALUES (@username, @email, @passwordHash, @role); SELECT SCOPE_IDENTITY() AS id;`;
 
     const request = connection.request();
     request.input("username", user.username);
     request.input("email", user.email);
+    request.input("passwordHash", user.passwordHash);
+    request.input("role", user.role);
 
     const result = await request.query(sqlQuery);
 
@@ -54,7 +58,8 @@ class User {
       ? new User(
           result.recordset[0].id,
           result.recordset[0].username,
-          result.recordset[0].email
+          result.recordset[0].email,
+          result.recordset[0].role
         )
       : null; // Handle book not found
   }
@@ -90,6 +95,23 @@ class User {
     return result.rowsAffected > 0;
   }
 
+  static async getCountByUsername(username) {
+    const connection = await sql.connect(dbConfig);
+
+    try {
+      const sqlQuery = `SELECT * FROM Users WHERE username = @username`;
+      const request = connection.request();
+      request.input("username", username);
+      const result = await request.query(sqlQuery);
+
+      return result.recordset[0];
+    } catch (error) {
+      throw new Error("Error searching users"); // Or handle error differently
+    } finally {
+      await connection.close(); // Close connection even on errors
+    }
+  }
+
   static async searchUsers(searchTerm) {
     const connection = await sql.connect(dbConfig);
 
@@ -102,6 +124,7 @@ class User {
       `;
 
       const result = await connection.request().query(query);
+
       return result.recordset;
     } catch (error) {
       throw new Error("Error searching users"); // Or handle error differently

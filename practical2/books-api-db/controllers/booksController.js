@@ -1,3 +1,4 @@
+const e = require("express");
 const Book = require("../models/book");
 
 const getAllBooks = async (req, res) => {
@@ -51,6 +52,33 @@ const updateBook = async (req, res) => {
   }
 };
 
+const updateBookAvailability = async (req, res) => {
+  const bookId = parseInt(req.params.id);
+  const updateBookData = req.body;
+
+  const existingBook = await Book.getBookById(bookId);
+  if (!existingBook) {
+    return res.status(404).send("Book not found");
+  }
+
+  Object.keys(updateBookData).forEach(key => {
+    if (updateBookData[key] != null) {
+      existingBook[key] = updateBookData[key];
+    }
+  });
+
+  try {
+    const updatedBook = await Book.updateBookAvailability(bookId, existingBook);
+    if (!updatedBook) {
+      return res.status(404).send("Book not found");
+    }
+    res.json(updatedBook);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error updating book");
+  }
+};
+
 const deleteBook = async (req, res) => {
   const bookId = parseInt(req.params.id);
 
@@ -71,5 +99,6 @@ module.exports = {
   getBookById,
   createBook,
   updateBook,
+  updateBookAvailability,
   deleteBook,
 };
